@@ -12,22 +12,31 @@ We have 3 states:
 1) New email (LED blinking)
 2) No news (LED down)
 3) Out of service (LED up)
-
 '''
 
 try:
-    cred = yaml.load(open('mwi.yml')) # load config file
+    cred = yaml.load(open('mwi.yml')) # load config yaml file
+    '''
+    name:
+      server: mail.com
+      login: user
+      pass: password
+    '''
 except:
     print sys.exc_info()[1]
     sys.exit(1)
     
-timeout = 900 # time between email check
+timeout = 15*60 # time between email check in seconds
 
 GPIO.setmode(GPIO.BCM)
 GPIO.setwarnings(False)
 # LED connected between GPIO and Ground over 470 Ohm
 chan = 3 # using GPIO3
 GPIO.setup(chan, GPIO.OUT)
+
+def log_file(msg):
+  with open("mwi.log", "a") as f:
+    f.write( "%s: %s\n" % (time.ctime(), msg) )
 
 def check_mail(): #TODO: check several servers
     mails = False # do we have new emails?
@@ -39,7 +48,7 @@ def check_mail(): #TODO: check several servers
         try:
             M.login(cred[serv]["login"], cred[serv]["pass"])
         except:
-            print "No connection"
+            log_file("No connection")
             service = False
             return service, mails
 
@@ -48,13 +57,13 @@ def check_mail(): #TODO: check several servers
         if ret == 'OK':
             #print data
             if data[0] != '':
-                print 'You have %s new e-mails!' % (len(data[0].split(' ')))
+                log_file('You have %s new e-mails!' % (len(data[0].split(' '))) )
                 mails = True
             else:
-                print 'No news'
+                log_file('No news')
                 mails = False
         else:
-            print "No service"
+            log_file("No service")
             service = False
             return service, mails
 
@@ -82,13 +91,13 @@ def led_up():
 while True:
     service, mails = check_mail() 
     if mails: # We have new email
-        print "LED blink!"
+        log_file("LED blink!")
         led_blink()
     elif service: # Server available, but no e-mails
-        print "LED down"
+        log_file("LED down")
         led_down()
     else:
-        print "LED up" # Out of service
+        log_file("LED up") # Out of service
         led_up()
 
 #GPIO.cleanup()
