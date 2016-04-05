@@ -9,9 +9,9 @@ Message Waiting Indicator program for Raspberry Pi 2
 Check for new e-mail on IMAP servers and notify by LED blinking
 
 We have 3 states:
-1) New email (LED blinking)
-2) No news (LED down)
-3) Out of service (LED up)
+1) New email
+2) No news
+3) Out of service
 '''
 
 try:
@@ -25,7 +25,7 @@ try:
 except:
     print sys.exc_info()[1]
     sys.exit(1)
-    
+
 timeout = 15*60 # time between email check in seconds
 
 GPIO.setmode(GPIO.BCM)
@@ -42,13 +42,18 @@ def check_mail(): #TODO: check several servers
     mails = False # do we have new emails?
     service = True # does email server available?
     for serv in cred.keys():
-        
-        M = imaplib.IMAP4_SSL(cred[serv]["server"])
+
+        try:
+            M = imaplib.IMAP4_SSL(cred[serv]["server"])
+        except:
+            log_file("No connection")
+            service = False
+            return service, mails
 
         try:
             M.login(cred[serv]["login"], cred[serv]["pass"])
         except:
-            log_file("No connection")
+            log_file("Login error")
             service = False
             return service, mails
 
@@ -72,18 +77,23 @@ def check_mail(): #TODO: check several servers
     return service, mails
 
 def led_blink():
-    for t in range(int(timeout/2)):
-        # LED up for 0.5s
+    for t in range(int(timeout/2)): # period is 2 seconds
+        # LED up
         GPIO.output(chan, 1)
-        time.sleep(0.5)
-        # LED down for 1.5s
+        time.sleep(0.7) # in seconds
+        # LED down
         GPIO.output(chan, 0)
-        time.sleep(1.5)
+        time.sleep(1.3) # in seconds
 
-def led_down():
-    GPIO.output(chan, 0)
-    time.sleep(timeout)
-    
+def led_down(): # short blink to show activity
+    for t in range(int(timeout/3)): # period is 3 seconds
+        # LED up
+        GPIO.output(chan, 1)
+        time.sleep(0.1)
+        # LED down
+        GPIO.output(chan, 0)
+        time.sleep(2.9)
+
 def led_up():
     GPIO.output(chan, 1)
     time.sleep(timeout)
@@ -91,13 +101,13 @@ def led_up():
 while True:
     service, mails = check_mail() 
     if mails: # We have new email
-        log_file("LED blink!")
+        #log_file("LED blink!")
         led_blink()
     elif service: # Server available, but no e-mails
-        log_file("LED down")
+        #log_file("LED down")
         led_down()
     else:
-        log_file("LED up") # Out of service
+        #log_file("LED up") # Out of service
         led_up()
 
-#GPIO.cleanup()
+GPIO.cleanup()

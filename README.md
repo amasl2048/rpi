@@ -1,13 +1,13 @@
-#Message Waiting Indicator program for Raspberry Pi 2
+##Message Waiting Indicator (MWI) program for Raspberry Pi 2
 
 Check for new e-mail on IMAP servers and notify by LED blinking
 
 We have 3 states:
-1. New email (LED blinking)
-2. No news (LED down)
-3. Out of service (LED up)
+1. New email (LED blinking);
+2. No news (LED down) - or short blink in order to show activity;
+3. Out of service (LED up).
 
-Script is loading config yaml file (mwi.yml):
+Script loads config yaml file (mwi.yml):
 '''
     name:
       server: mail.com
@@ -15,4 +15,4 @@ Script is loading config yaml file (mwi.yml):
       pass: password
 '''
 
-and writing a log to file (mwi.log).
+and writes a log to file (mwi.log).
